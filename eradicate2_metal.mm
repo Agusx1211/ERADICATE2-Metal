@@ -21,6 +21,9 @@
 #define ERADICATE2_SPEEDSAMPLES 20
 #define ERADICATE2_MAX_SCORE 40
 
+// Optional base salt (32 bytes) supplied via CLI; empty means random fallback.
+static std::string g_baseSaltBinary;
+
 static std::string readTextFile(const char * path) {
     std::ifstream in(path, std::ios::in | std::ios::binary);
     if (!in) return {};
@@ -48,6 +51,10 @@ static std::vector<uint64_t> makeInitialStateQ(const std::string &addressBinary,
     h.b[0] = 0xff;
     for (int i = 0; i < 20 && i < (int)addressBinary.size(); ++i) h.b[i + 1] = (uint8_t)addressBinary[i];
     for (int i = 0; i < 32; ++i) h.b[i + 21] = (uint8_t)distr(eng);
+    // If a base salt is provided via CLI, override the random salt
+    if (!g_baseSaltBinary.empty()) {
+        for (int i = 0; i < 32 && i < (int)g_baseSaltBinary.size(); ++i) h.b[i + 21] = (uint8_t)g_baseSaltBinary[i];
+    }
     for (int i = 0; i < 32 && i < (int)initCodeDigest.size(); ++i) h.b[i + 53] = (uint8_t)initCodeDigest[i];
     h.b[85] ^= 0x01;
     std::vector<uint64_t> q(25);
@@ -95,6 +102,7 @@ int main(int argc, char **argv) {
             std::string strAddress;
             std::string strInitCode;
             std::string strInitCodeFile;
+            std::string strBaseHash; // optional 32-byte base salt/hash in hex
 
             argp.addSwitch('h', "help", bHelp);
             argp.addSwitch('0', "benchmark", bModeBenchmark);
@@ -117,6 +125,7 @@ int main(int argc, char **argv) {
             argp.addSwitch('A', "address", strAddress);
             argp.addSwitch('I', "init-code", strInitCode);
             argp.addSwitch('i', "init-code-file", strInitCodeFile);
+            argp.addSwitch('H', "base-hash", strBaseHash);
 
             if (!argp.parse()) {
                 std::cout << "error: bad arguments, try again :<" << std::endl;
@@ -134,6 +143,16 @@ int main(int argc, char **argv) {
             const std::string strAddressBinary = parseHexadecimalBytes(strAddress);
             const std::string strInitCodeBinary = parseHexadecimalBytes(strInitCode);
             const std::string strInitCodeDigest = keccakDigest32(strInitCodeBinary);
+            // Optional base-hash parsing and validation
+            if (!strBaseHash.empty()) {
+                g_baseSaltBinary = parseHexadecimalBytes(strBaseHash);
+                if (g_baseSaltBinary.size() != 32) {
+                    std::cout << "error: --base-hash must be exactly 32 bytes (64 hex chars)" << std::endl;
+                    return 1;
+                }
+            } else {
+                g_baseSaltBinary.clear();
+            }
             const auto initQ = makeInitialStateQ(strAddressBinary, strInitCodeDigest);
 
             mode modeSel = ModeFactory::benchmark();

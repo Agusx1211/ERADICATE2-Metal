@@ -24,6 +24,9 @@
 #include "help.hpp"
 #include "sha3.hpp"
 
+// Optional base salt (32 bytes) supplied via CLI; empty means random fallback.
+std::string g_baseSaltBinary;
+
 std::string readFile(const char * const szFilename)
 {
 	std::ifstream in(szFilename, std::ios::in | std::ios::binary);
@@ -152,9 +155,15 @@ std::string makePreprocessorInitHashExpression(const std::string & strAddressBin
 		h.b[i + 1] = strAddressBinary[i];
 	}
 
-	for (int i = 0; i < 32; ++i) {
-		h.b[i + 21] = distr(eng);
-	}
+    for (int i = 0; i < 32; ++i) {
+        h.b[i + 21] = distr(eng);
+    }
+    // If a base salt is provided via CLI, override the random salt
+    if (!g_baseSaltBinary.empty()) {
+        for (int i = 0; i < 32; ++i) {
+            h.b[i + 21] = static_cast<uint8_t>(g_baseSaltBinary[i]);
+        }
+    }
 
 	for (int i = 0; i < 32; ++i) {
 		h.b[i + 53] = strInitCodeDigest[i];
@@ -198,6 +207,7 @@ int main(int argc, char * * argv) {
 		std::string strAddress;
 		std::string strInitCode;
 		std::string strInitCodeFile;
+		std::string strBaseHash; // optional 32-byte base salt/hash in hex
 
 		argp.addSwitch('h', "help", bHelp);
 		argp.addSwitch('0', "benchmark", bModeBenchmark);
@@ -220,6 +230,7 @@ int main(int argc, char * * argv) {
 		argp.addSwitch('A', "address", strAddress);
 		argp.addSwitch('I', "init-code", strInitCode);
 		argp.addSwitch('i', "init-code-file", strInitCodeFile);
+		argp.addSwitch('H', "base-hash", strBaseHash);
 
 		if (!argp.parse()) {
 			std::cout << "error: bad arguments, try again :<" << std::endl;
@@ -245,6 +256,18 @@ int main(int argc, char * * argv) {
 		const std::string strAddressBinary = parseHexadecimalBytes(strAddress);
 		const std::string strInitCodeBinary = parseHexadecimalBytes(strInitCode);
 		const std::string strInitCodeDigest = keccakDigest(strInitCodeBinary);
+
+		// Optional base-hash parsing and validation
+		if (!strBaseHash.empty()) {
+			g_baseSaltBinary = parseHexadecimalBytes(strBaseHash);
+			if (g_baseSaltBinary.size() != 32) {
+				std::cout << "error: --base-hash must be exactly 32 bytes (64 hex chars)" << std::endl;
+				return 1;
+			}
+		} else {
+			g_baseSaltBinary.clear();
+		}
+
 		const std::string strPreprocessorInitStructure = makePreprocessorInitHashExpression(strAddressBinary, strInitCodeDigest);
 
 		mode mode = ModeFactory::benchmark();
