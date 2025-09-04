@@ -12,9 +12,9 @@ class ModeFactory {
 
 	public:
 		static mode matching(const std::string strHex);
-		static mode range(const cl_uchar min, const cl_uchar max);
+		static mode range(const uint8_t min, const uint8_t max);
 		static mode leading(const char charLeading);
-		static mode leadingRange(const cl_uchar min, const cl_uchar max);
+		static mode leadingRange(const uint8_t min, const uint8_t max);
 		static mode mirror();
 
 		static mode benchmark();

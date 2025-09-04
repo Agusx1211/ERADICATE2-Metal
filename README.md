@@ -55,3 +55,17 @@ usage: ./ERADICATE2 [OPTIONS]
     Author: Johan Gustafsson <johan@johgu.se>
     Beer donations: 0x000dead000ae1c8e8ac27103e4ff65f42a4e9203
 ```
+
+## Metal (alpha)
+- Status: experimental GPU backend using Apple Metal on macOS (Darwin only).
+- Build: requires `clang++` and macOS with Metal-capable GPU.
+- Output: build artifacts are placed under `build/`.
+
+Build and run on macOS:
+- `make` — builds `build/ERADICATE2` with the Metal backend.
+- `./build/ERADICATE2 -A 0x00000000000000000000000000000000deadbeef -I 0x00 --benchmark`
+
+Notes:
+- Device selection: use `-s/--skip <index>` to skip a GPU reported in the device list.
+- Work size: `-w/--work <size>` controls threads per threadgroup (defaults to 128 if unset; capped by the device limit).
+- The Metal backend mirrors the CLI of the original OpenCL build where applicable, but some OpenCL-specific knobs may be no-ops.

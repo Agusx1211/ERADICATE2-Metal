@@ -1,0 +1,7 @@
+# Build artifacts
+/build/
+
+# macOS / Xcode / clang extras (just in case)
+.DS_Store
+*.dSYM/
+

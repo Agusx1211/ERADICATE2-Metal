@@ -22,8 +22,8 @@ mode ModeFactory::matching(const std::string strHex) {
 	mode r;
 	r.function = ModeFunction::Matching;
 
-	std::fill( r.data1, r.data1 + sizeof(r.data1), cl_uchar(0) );
-	std::fill( r.data2, r.data2 + sizeof(r.data2), cl_uchar(0) );
+    std::fill( r.data1, r.data1 + sizeof(r.data1), uint8_t(0) );
+    std::fill( r.data2, r.data2 + sizeof(r.data2), uint8_t(0) );
 
 	auto index = 0;
 	
@@ -49,11 +49,11 @@ mode ModeFactory::matching(const std::string strHex) {
 mode ModeFactory::leading(const char charLeading) {
 	mode r;
 	r.function = ModeFunction::Leading;
-	r.data1[0] = static_cast<cl_uchar>(hexValue(charLeading));
+    r.data1[0] = static_cast<uint8_t>(hexValue(charLeading));
 	return r;
 }
 
-mode ModeFactory::range(const cl_uchar min, const cl_uchar max) {
+mode ModeFactory::range(const uint8_t min, const uint8_t max) {
 	mode r;
 	r.function = ModeFunction::Range;
 	r.data1[0] = min;
@@ -69,7 +69,7 @@ mode ModeFactory::numbers() {
 	return range(0, 9);
 }
 
-mode ModeFactory::leadingRange(const cl_uchar min, const cl_uchar max) {
+mode ModeFactory::leadingRange(const uint8_t min, const uint8_t max) {
 	mode r;
 	r.function = ModeFunction::LeadingRange;
 	r.data1[0] = min;
